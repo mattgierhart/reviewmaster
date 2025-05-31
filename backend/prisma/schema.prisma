@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Subscription info
+  stripeCustomerId     String?
+  subscriptionStatus   String? // active, canceled, past_due
+  subscriptionPlan     String? // basic, pro, enterprise
+  subscriptionEndsAt   DateTime?
+  
+  // Google Business Profile integration
+  googleRefreshToken   String?
+  googleBusinessAccounts GoogleBusinessAccount[]
+  
+  reviewResponses ReviewResponse[]
+  
+  @@map("users")
+}
+
+model GoogleBusinessAccount {
+  id          String @id @default(cuid())
+  userId      String
+  googleId    String @unique
+  name        String
+  address     String?
+  phoneNumber String?
+  websiteUrl  String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  reviews Review[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("google_business_accounts")
+}
+
+model Review {
+  id          String @id @default(cuid())
+  googleId    String @unique
+  accountId   String
+  
+  // Review content
+  reviewerName     String
+  reviewText       String
+  rating           Int
+  reviewDate       DateTime
+  
+  // AI analysis
+  sentiment        String? // positive, negative, neutral
+  keyTopics        String[] // extracted topics
+  urgencyScore     Float? // 0-1 scale
+  suggestedResponse String?
+  
+  account GoogleBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  responses ReviewResponse[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("reviews")
+}
+
+model ReviewResponse {
+  id       String @id @default(cuid())
+  reviewId String
+  userId   String
+  
+  responseText String
+  isPublished  Boolean @default(false)
+  publishedAt  DateTime?
+  
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("review_responses")
+}
