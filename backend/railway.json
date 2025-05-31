@@ -1,0 +1,9 @@
+{
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "startCommand": "npm run prisma:deploy && npm start"
+  },
+  "build": {
+    "buildCommand": "npm run build"
+  }
+}
